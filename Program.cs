@@ -4,6 +4,7 @@ using Serilog.Events;
 using CliWrap;
 using CliWrap.Buffered;
 using System.Security.Principal;
+using System.Runtime.Versioning;
 
 const string ServiceName = "Systems_One_Watchdog_Service";
 const string ServiceDisplayName = "Systems One Watchdog Service";
@@ -11,6 +12,7 @@ const string ServiceDescription = "Systems One Watchdog Service that monitors an
 const string SettingsDirectory = "C:\\Users\\Public\\Documents\\SystemOne_App_Settings";
 const string SettingsFileName = "watchdog_settings.json";
 
+[SupportedOSPlatform("windows")]
 static bool IsAdministrator()
 {
     try
@@ -196,7 +198,11 @@ try
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Is(level)
             .Enrich.FromLogContext()
-            .WriteTo.File(logPath!, rollingInterval: RollingInterval.Day, shared: true)
+            .WriteTo.File(
+                logPath!,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: monitor.Logging.RetainedFileCountLimit,
+                shared: true)
             .WriteTo.Console()
             .CreateLogger();
 

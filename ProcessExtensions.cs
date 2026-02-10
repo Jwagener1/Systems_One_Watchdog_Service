@@ -2,9 +2,11 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Systems_One_Watchdog_Service
 {
+    [SupportedOSPlatform("windows")]
     public static class ProcessExtensions
     {
         public enum SECURITY_IMPERSONATION_LEVEL
@@ -69,9 +71,9 @@ namespace Systems_One_Watchdog_Service
         public struct STARTUPINFO
         {
             public int cb;
-            public string lpReserved;
-            public string lpDesktop;
-            public string lpTitle;
+            public string? lpReserved;
+            public string? lpDesktop;
+            public string? lpTitle;
             public int dwX;
             public int dwY;
             public int dwXSize;
@@ -149,7 +151,7 @@ namespace Systems_One_Watchdog_Service
             public static extern bool DuplicateTokenEx(
                 IntPtr hExistingToken,
                 uint dwDesiredAccess,
-                SECURITY_ATTRIBUTES lpTokenAttributes,
+                SECURITY_ATTRIBUTES? lpTokenAttributes,
                 SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
                 TOKEN_TYPE TokenType,
                 out IntPtr phNewToken);
@@ -157,14 +159,14 @@ namespace Systems_One_Watchdog_Service
             [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
             public static extern bool CreateProcessAsUser(
                 IntPtr hToken,
-                string lpApplicationName,
-                string lpCommandLine,
-                SECURITY_ATTRIBUTES lpProcessAttributes,
-                SECURITY_ATTRIBUTES lpThreadAttributes,
+                string? lpApplicationName,
+                string? lpCommandLine,
+                SECURITY_ATTRIBUTES? lpProcessAttributes,
+                SECURITY_ATTRIBUTES? lpThreadAttributes,
                 bool bInheritHandles,
                 CREATE_PROCESS_FLAGS dwCreationFlags,
                 IntPtr lpEnvironment,
-                string lpCurrentDirectory,
+                string? lpCurrentDirectory,
                 ref STARTUPINFO lpStartupInfo,
                 out PROCESS_INFORMATION lpProcessInformation);
 
@@ -172,7 +174,7 @@ namespace Systems_One_Watchdog_Service
             public static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
 
             [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-            public static extern bool LookupPrivilegeValue(string lpSystemName, string lpName, out LUID lpLuid);
+            public static extern bool LookupPrivilegeValue(string? lpSystemName, string lpName, out LUID lpLuid);
 
             [DllImport("advapi32.dll", SetLastError = true)]
             public static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool DisableAllPrivileges, ref TOKEN_PRIVILEGES NewState, uint Zero, IntPtr Null1, IntPtr Null2);

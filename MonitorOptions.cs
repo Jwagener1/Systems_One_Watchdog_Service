@@ -22,4 +22,5 @@ public sealed class MonitorLoggingOptions
     public bool EnableFileLogging { get; set; }
     public string? LogFilePath { get; set; }
     public string? LogLevel { get; set; } = "Information";
+    public int RetainedFileCountLimit { get; set; } = 7;
 }
