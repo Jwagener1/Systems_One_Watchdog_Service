@@ -225,6 +225,13 @@ namespace Systems_One_Watchdog_Service
             if (string.IsNullOrWhiteSpace(process.StartInfo.FileName))
                 throw new InvalidOperationException("The StartInfo.FileName property must be defined");
 
+            // Check for active console session
+            uint sessionId = Kernel32.WTSGetActiveConsoleSessionId();
+
+            // 0xFFFFFFFF indicates no active console session (no user logged in)
+            if (sessionId == 0xFFFFFFFF)
+                throw new InvalidOperationException("No active user session available. Cannot start process in user context.");
+
             // Ensure required privileges when running as a service (LocalSystem)
             try
             {
@@ -236,8 +243,6 @@ namespace Systems_One_Watchdog_Service
             {
                 // If privilege enabling fails, we'll still attempt; CreateProcessAsUser will error if insufficient
             }
-
-            uint sessionId = Kernel32.WTSGetActiveConsoleSessionId();
 
             if (!WtsApi32.WTSQueryUserToken(sessionId, out var userTokenPtr))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
