@@ -1,0 +1,52 @@
+name: Build and Package Installer
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # Allow manual triggering from the Actions tab
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+
+    steps:
+      # 1. Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up .NET 8 SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # 3. Restore NuGet packages
+      - name: Restore dependencies
+        run: dotnet restore Systems_One_Watchdog_Service.sln
+
+      # 4. Publish the app as a self-contained Windows x64 executable
+      #    Output goes to the ./publish folder, which setup.iss expects
+      - name: Publish application
+        run: >
+          dotnet publish Systems_One_Watchdog_Service.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --output ./publish
+          -p:PublishSingleFile=false
+
+      # 5. Compile the Inno Setup installer script
+      - name: Build Inno Setup Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: setup.iss
+          options: /O+
+
+      # 6. Upload the installer .exe as a build artifact
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Systems_One_Watchdog_Service_Installer
+          path: installer_output/Systems_One_Watchdog_Service_Setup.exe
+          if-no-files-found: error
