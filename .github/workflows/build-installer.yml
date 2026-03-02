@@ -10,6 +10,10 @@ jobs:
   build-installer:
     runs-on: windows-latest
 
+    # Required permissions to create a GitHub Release
+    permissions:
+      contents: write
+
     steps:
       # 1. Check out the repository code
       - name: Checkout code
@@ -25,8 +29,16 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Systems_One_Watchdog_Service.sln
 
-      # 4. Publish the app as a self-contained Windows x64 executable
-      #    Output goes to the ./publish folder, which setup.iss expects
+      # 4. Generate a version number based on the date and run number
+      #    e.g. v2026.03.02.1
+      - name: Set version
+        id: version
+        run: |
+          $version = "v$(Get-Date -Format 'yyyy.MM.dd').${{ github.run_number }}"
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      # 5. Publish the app as a self-contained Windows x64 executable
       - name: Publish application
         run: >
           dotnet publish Systems_One_Watchdog_Service.csproj
@@ -36,17 +48,27 @@ jobs:
           --output ./publish
           -p:PublishSingleFile=false
 
-      # 5. Compile the Inno Setup installer script
+      # 6. Compile the Inno Setup installer script
       - name: Build Inno Setup Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         with:
           path: setup.iss
           options: /O+
 
-      # 6. Upload the installer .exe as a build artifact
-      - name: Upload Installer Artifact
-        uses: actions/upload-artifact@v4
+      # 7. Create a GitHub Release and upload the installer as an asset
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: Systems_One_Watchdog_Service_Installer
-          path: installer_output/Systems_One_Watchdog_Service_Setup.exe
-          if-no-files-found: error
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: "Release ${{ steps.version.outputs.VERSION }}"
+          body: |
+            Automated release built from commit ${{ github.sha }}.
+
+            ### What's included
+            - `Systems_One_Watchdog_Service_Setup.exe` — Windows installer for the Watchdog Service
+
+            ### Installation
+            Run the installer as Administrator. It will automatically install and start the Windows Service.
+          files: installer_output/Systems_One_Watchdog_Service_Setup.exe
+          draft: false
+          prerelease: false
